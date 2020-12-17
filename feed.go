@@ -24,27 +24,29 @@ var ErrNotFound = errors.New("CVE not found")
 // FetchCVE extracts the year of a CVE ID, and returns a CVEItem data struct
 // from the most up-to-date NVD data feed for that year
 func (c *Client) FetchCVE(cveID string) (CVEItem, error) {
-	var cve CVEItem
 	if !IsCVEIDStrict(cveID) {
 		return CVEItem{}, fmt.Errorf("invalid CVE ID: %s", cveID)
 	}
 
-	cve, err := c.fetchNVDCVE(cveID)
-	if err != nil && err != ErrNotFound {
-		return CVEItem{}, err
-	}
-
-	// If not found in NVD feeds, fall back to check MITRE database
-	// see if valid CVE ID exists with Reserved status
-	cve, err = fetchReservedCVE(cveID)
-	if err != nil {
-		return CVEItem{}, ErrNotFound
-		// return CVEItem{}, &IDNotFound{cveID, yearStr, err.Error()}
-	}
-
 	// TODO validate required data struct values before return
 
-	return cve, nil
+	cve, err := c.fetchNVDCVE(cveID)
+	switch err {
+	case nil:
+		// Found cve in NVD feed, return result
+		return cve, nil
+	case ErrNotFound:
+		// If not found in NVD feeds, fall back to check MITRE database
+		// see if valid CVE ID exists with Reserved status
+		cve, err = fetchReservedCVE(cveID)
+		if err != nil {
+			return CVEItem{}, ErrNotFound
+		}
+		return cve, nil
+	default:
+		// Case err != nil
+		return CVEItem{}, err
+	}
 }
 
 // FetchUpdatedCVEs returns a slice of most recently published and modified CVES
@@ -145,7 +147,7 @@ func (c *Client) loadFeed(year string) ([]byte, error) {
 	return raw, nil
 }
 
-func (c *Client) searchFeed(year string, cveID string) (cve CVEItem, err error) {
+func (c *Client) searchFeed(year string, cveID string) (CVEItem, error) {
 	raw, err := c.loadFeed(year)
 	if err != nil {
 		return CVEItem{}, err
@@ -158,6 +160,7 @@ func (c *Client) searchFeed(year string, cveID string) (cve CVEItem, err error) 
 		return CVEItem{}, err
 	}
 
+	var cve CVEItem
 	found := false
 	for _, v := range parsed.GetArray("CVE_Items") {
 		tmpID := string(v.GetStringBytes("cve", "CVE_data_meta", "ID"))

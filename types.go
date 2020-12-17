@@ -104,7 +104,7 @@ type CVEItem struct {
 	} `json:"impact"`
 	PublishedDate    string `json:"publishedDate"`
 	LastModifiedDate string `json:"lastModifiedDate"`
-	Reserved         bool   `json:"reserved"`
+	Reserved         bool   `json:"reserved,omitempty"`
 }
 
 type Vendor struct {

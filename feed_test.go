@@ -59,7 +59,30 @@ func TestClient_FetchCVE(t *testing.T) {
 
 		teardown()
 	}
+}
 
+func TestClient_FetchCVE_ReferenceData(t *testing.T) {
+	tests := []struct {
+		cveID string
+	}{
+		{"CVE-2017-7529"},
+	}
+
+	for _, tt := range tests {
+		t.Logf("run subtest %s", tt.cveID)
+
+		cl, err := NewClient("tmp")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := cl.FetchCVE(tt.cveID)
+		assert.NoError(t, err)
+		assert.NotNil(t, got.CVE.References.ReferenceData)
+		fmt.Println(got)
+
+		teardown()
+	}
 }
 
 // go test -run=Bench -bench=. -benchtime=20s -benchmem ./pkg/nvd
