@@ -18,8 +18,10 @@ func fetchReservedCVE(cveID string) (CVEItem, error) {
 
 	var description, publishedDate string
 
+	h := &http.Client{Timeout: 10 * time.Second}
+
 	targetURL := fmt.Sprintf("https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s", cveID)
-	res, err := http.Get(targetURL)
+	res, err := h.Get(targetURL)
 	if err != nil {
 		return cve, err
 	}

@@ -1,7 +1,6 @@
 package nvd
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +15,11 @@ func TestFetchReservedCVE(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		cve, err := fetchReservedCVE(tt.cveID)
+		got, err := fetchReservedCVE(tt.cveID)
 		assert.NoError(t, err)
-		fmt.Printf("%+v\n\n", cve)
+		assert.Equal(t, tt.cveID, got.CVE.CVEDataMeta.ID)
+		assert.NotNil(t, got.PublishedDate)
+		assert.True(t, got.Reserved)
+		assert.Nil(t, got.CVE.Description.DescriptionData)
 	}
 }
