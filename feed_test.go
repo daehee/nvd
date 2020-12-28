@@ -85,7 +85,7 @@ func TestClient_FetchCVE_ReferenceData(t *testing.T) {
 	}
 }
 
-// go test -run=Bench -bench=. -benchtime=20s -benchmem ./pkg/nvd
+// go test -run=Bench -bench=. -benchtime=20s -benchmem
 func BenchmarkClient_SearchFeed(b *testing.B) {
 	cl, err := NewClient("tmp")
 	if err != nil {

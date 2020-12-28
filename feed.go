@@ -162,18 +162,22 @@ func (c *Client) searchFeed(year string, cveID string) (CVEItem, error) {
 
 	var cve CVEItem
 	found := false
-	for _, v := range parsed.GetArray("CVE_Items") {
+	m := parsed.Get("CVE_Items")
+	arr, err := m.Array()
+	if err != nil {
+		return CVEItem{}, errors.New("error parsing JSON array: CVE_Items")
+	}
+	for _, v := range arr {
 		tmpID := string(v.GetStringBytes("cve", "CVE_data_meta", "ID"))
 		if tmpID == "" {
-			return CVEItem{}, errors.New("error parsing CVE ID field")
+			return CVEItem{}, errors.New("error parsing JSON: cve > CVE_data_meta > ID")
 		}
 		if tmpID == cveID {
 			found = true
-			buf := make([]byte, 0)
-			buf = v.MarshalTo(buf)
+			buf := v.MarshalTo(nil)
 			err = json.Unmarshal(buf, &cve)
 			if err != nil {
-				return CVEItem{}, err
+				return CVEItem{}, errors.New("error unmarshaling JSON to CVEItem")
 			}
 			break
 		}
