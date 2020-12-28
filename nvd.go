@@ -9,7 +9,7 @@ import (
 
 type Client struct {
 	feedDir    string
-	parserPool *fastjson.ParserPool
+	parserPool fastjson.ParserPool
 }
 
 func NewClient(baseDir string) (cl *Client, err error) {
@@ -26,7 +26,6 @@ func NewClient(baseDir string) (cl *Client, err error) {
 	}
 
 	return &Client{
-		feedDir:    feedDir,
-		parserPool: &fastjson.ParserPool{}, // So that json parser can be reused
+		feedDir: feedDir,
 	}, nil
 }
