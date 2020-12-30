@@ -3,13 +3,10 @@ package nvd
 import (
 	"os"
 	"path"
-
-	"github.com/valyala/fastjson"
 )
 
 type Client struct {
-	feedDir    string
-	parserPool fastjson.ParserPool
+	feedDir string
 }
 
 func NewClient(baseDir string) (cl *Client, err error) {

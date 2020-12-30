@@ -148,44 +148,41 @@ func (c *Client) loadFeed(year string) ([]byte, error) {
 }
 
 func (c *Client) searchFeed(year string, cveID string) (CVEItem, error) {
-	raw, err := c.loadFeed(year)
+	p := c.pathToFeed(year)
+	f, err := os.Open(p)
 	if err != nil {
 		return CVEItem{}, err
 	}
+	defer f.Close()
 
-	parser := c.parserPool.Get()
-	defer c.parserPool.Put(parser)
-	parsed, err := parser.ParseBytes(raw)
-	if err != nil {
-		return CVEItem{}, err
-	}
+	decoder := json.NewDecoder(f)
 
-	var cve CVEItem
-	found := false
-	m := parsed.Get("CVE_Items")
-	arr, err := m.Array()
-	if err != nil {
-		return CVEItem{}, errors.New("error parsing JSON array: CVE_Items")
-	}
-	for _, v := range arr {
-		tmpID := string(v.GetStringBytes("cve", "CVE_data_meta", "ID"))
-		if tmpID == "" {
-			return CVEItem{}, errors.New("error parsing JSON: cve > CVE_data_meta > ID")
+	// Discard JSON tokens until reaching CVE_Items array
+	for {
+		tok, err := decoder.Token()
+		if err != nil {
+			return CVEItem{}, err
 		}
-		if tmpID == cveID {
-			found = true
-			buf := v.MarshalTo(nil)
-			err = json.Unmarshal(buf, &cve)
-			if err != nil {
-				return CVEItem{}, errors.New("error unmarshaling JSON to CVEItem")
-			}
+		if tok == "CVE_Items" {
+			// Read next opening bracket
+			decoder.Token()
 			break
 		}
 	}
-	if !found {
-		return CVEItem{}, ErrNotFound
+
+	var cve CVEItem
+	for decoder.More() {
+		err = decoder.Decode(&cve)
+		if err != nil {
+			return CVEItem{}, err
+		}
+
+		if cve.CVE.CVEDataMeta.ID == cveID {
+			return cve, nil
+		}
 	}
-	return cve, nil
+
+	return CVEItem{}, ErrNotFound
 }
 
 // downloadFeed downloads a gz compressed feed file from u url to p file path
